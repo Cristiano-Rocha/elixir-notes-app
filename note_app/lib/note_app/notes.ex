@@ -5,7 +5,7 @@ defmodule NoteApp.Notes.NoteServer do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
-    def all_notes(pid) do
+  def all_notes(pid) do
     GenServer.call(pid, :all_notes)
   end
 
@@ -20,7 +20,7 @@ defmodule NoteApp.Notes.NoteServer do
   end
 
   def delete_note(pid, id) do
-    GenServer.cast(__MODULE__, {:delete_note})
+    GenServer.cast(__MODULE__, {:delete_note, id})
   end
 
   def update_note(pid, note) do
@@ -39,8 +39,10 @@ defmodule NoteApp.Notes.NoteServer do
   end
 
   @impl true
-  def handle_cast({:create_note, note}, note) do
-    update_note = add_id()
+  def handle_cast({:create_note, note}, notes) do
+    update_note = add_id(notes, note)
+    update_notes = [update_note | notes]
+    {:noreply, update_notes}
   end
 
   @impl true
@@ -56,7 +58,8 @@ defmodule NoteApp.Notes.NoteServer do
 
   @impl true
   def handle_cast({:delete_note, id}, notes) do
-    update_notes = notes | Enum.reject(fn note -> Map.get(note, :id) == id end)
+    update_notes = notes |> Enum.reject(fn note -> Map.get(note, :id) == id end)
+    {:noreply, update_notes}
   end
 
   defp add_id(notes, note) do
